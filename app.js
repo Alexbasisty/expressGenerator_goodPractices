@@ -3,6 +3,11 @@ import expressRateLimit from 'express-rate-limit';
 
 const app = express();
 
+app.use(expressRateLimit({ 
+  windowMs: 2000 * 60,
+  max: 5,
+ }));
+
 let user = {
   name: 'Alex',
   modified: new Date()
