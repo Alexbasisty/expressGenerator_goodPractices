@@ -1,6 +1,7 @@
 import express from 'express';
 import expressRateLimit from 'express-rate-limit';
 import compression from 'compression';
+import morgan from 'morgan';
 
 const app = express();
 
@@ -10,6 +11,20 @@ app.use(expressRateLimit({
  }));
 
 app.use(compression({ level: 9 }));
+
+app.use(
+  morgan((tokens, req, res) => {
+    return [
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'),
+      '-',
+      tokens['response-time'](req, res),
+      'ms',
+    ].join(' ');
+  }),
+);
 
 let user = {
   name: 'Alex',
@@ -34,6 +49,18 @@ app.get('/user', (req, res) => {
 app.get('/test/:text', (req, res) => {
   const repeatReverseText = req.text.split('').reverse().join('').repeat(1000)
   res.send(repeatReverseText);
+})
+
+app.get('test1/:text', (req, res) => {
+  const stats = req.text
+    .split('')
+    .reduce((acc, curr) => {
+      acc[curr]
+        ? (acc[curr] += 1)
+        : (acc[curr] = 1);
+      return acc;
+    }, {});
+    res.send(stats);
 })
 
 app.put('user/:name', (req, res) => {
