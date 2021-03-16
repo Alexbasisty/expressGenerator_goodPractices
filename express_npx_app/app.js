@@ -3,6 +3,7 @@ let express = require('express');
 let path = require('path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
+let expressRateLimit = require('express-rate-limit');
 
 let indexRouter = require('./routes/index');
 let usersRouter = require('./routes/users');
@@ -18,10 +19,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(expressRateLimit({windowMs: 2000 * 60, max: 5})); 
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
+let user = {
+  name: 'Alex',
+  modified: new Date()
+}
+app.set('etag', 'strong');
+
+app.param('name', (req, res, next, name) => {
+  req.name = name;
+  next();
+});
+
+app.get('/user', (req, res) => {
+  res.append('Last-Modified', user.modified.toDateString())
+  res.json(user)
+})
+
+app.put('/user/:name', (req, res) => {
+   res.append('Last-Modified', user.modified.toDateString())
+   user.name = req.name;
+   user.modified = new Date();
+   res.json(user);
+})
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
