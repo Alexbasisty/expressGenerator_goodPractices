@@ -5,6 +5,7 @@ let cookieParser = require('cookie-parser');
 let logger = require('morgan');
 let expressRateLimit = require('express-rate-limit');
 let compression = require('compression');
+const morgan = require('morgan');
 
 let indexRouter = require('./routes/index');
 let usersRouter = require('./routes/users');
@@ -22,6 +23,19 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressRateLimit({windowMs: 2000 * 60, max: 5})); 
 app.use(compression({level: 9}));
+app.use(
+  morgan(function (tokens, req, res) {
+    return [
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'),
+      '-',
+      tokens['response-time'](req, res),
+      'ms',
+    ].join(' ');
+  }),
+);
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -41,6 +55,18 @@ app.param('text', (req, res, next, text) => {
   req.text = text;
 
   next();
+});
+
+app.get('/test2/:text', (req, res) => {
+  const stats = req.params.text
+    .split('')
+    .reduce((acc, curr) => {
+      acc[curr] ? (acc[curr] +=1) : (acc[curr] = 1);
+
+      return acc;
+    }, {});
+
+  res.send(stats);
 });
 
 app.get('/user', (req, res) => {
